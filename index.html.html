@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đường Đua TOP 1 - Con Quay & Hiệu Ứng Con Quay</title>
+<style>
+:root{--bg:#071426;--panel:#102642;--cyan:#35d7ff;--gold:#ffd447;--green:#32df85;--red:#ff5268}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#153b65,#06101f 65%);color:#fff;font-family:Arial,Helvetica,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 4%;border-bottom:1px solid #24476a;background:#071426cc}
+.logo{font-weight:1000;font-size:clamp(20px,2.5vw,32px);color:var(--gold);text-shadow:0 3px #b94b00;letter-spacing:1px}.tag{color:#9fc4e8;font-size:12px;margin-top:3px}
+button,input,select{font:inherit}button{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;transition:.15s}button:hover{transform:translateY(-2px);filter:brightness(1.1)}.primary{background:linear-gradient(#42f39a,#0ab95e);color:#032b1a;box-shadow:0 4px #087841}.blue{background:linear-gradient(#47caff,#1679f7);color:white;box-shadow:0 4px #084ca9}.gold{background:linear-gradient(#ffe875,#ffb61d);color:#432800;box-shadow:0 4px #a45b00}.muted{background:#203d5c;color:#d6eaff}.sound-btn{background:#3a1d6e;color:#e2c6ff;box-shadow:0 4px #220f49}
+main{max-width:1400px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:18px}
+.panel{background:linear-gradient(145deg,#112b49,#0a1a2e);border:1px solid #285174;border-radius:18px;padding:16px;box-shadow:0 12px 30px #0004;position:relative}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h2{margin:0;font-size:18px} .small{color:#9dbad6;font-size:13px;line-height:1.4}
+#trackWrap{position:relative;overflow:hidden;border-radius:15px;border:2px solid #35648a;background:#10243a;min-height:360px}
+#raceCanvas{display:block;width:100%;height:380px}
+.trackBadge{position:absolute;top:12px;left:12px;background:#071426dc;border:1px solid #4e7699;border-radius:10px;padding:8px 12px;font-weight:800}
+.lapBadge{position:absolute;top:12px;right:12px;background:#071426dc;border-radius:10px;padding:8px 12px;color:var(--gold);font-weight:800}
+.timerBadge{position:absolute;bottom:12px;right:12px;background:#ff3f48;border-radius:12px;padding:8px 14px;color:white;font-weight:900;font-size:18px;box-shadow:0 4px 10px rgba(0,0,0,0.4);display:none}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.stat{padding:10px;border-radius:12px;background:#071a2d;border:1px solid #214463}.stat b{display:block;color:var(--cyan);font-size:19px;margin-top:4px}
+input,select{width:100%;padding:10px;border:1px solid #315879;border-radius:10px;background:#07192b;color:white;outline:none}label{display:block;color:#b8d3ed;font-size:12px;margin:10px 0 4px}
+.carChoices{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.car{width:36px;height:30px;border:2px solid #ffffff44;border-radius:8px;cursor:pointer}.car.selected{outline:3px solid white;outline-offset:2px}
+
+/* QR Code and Zoom Controls */
+.zoom-controls{display:flex;gap:4px}
+.btn-icon{padding:4px 10px;font-size:14px;border-radius:6px;background:#1d4262;color:white}
+.clickable-panel{cursor:pointer;transition:transform 0.2s, box-shadow 0.2s}
+.clickable-panel:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(53,215,255,0.25)}
+#qrWrap{transition:all 0.3s ease;transform-origin:top center;text-align:center}
+#qrBox{display:grid;place-items:center;background:white;border-radius:12px;width:150px;height:150px;margin:10px auto;padding:8px;color:#071426;transition:all 0.3s ease}
+#qrCanvas{width:134px;height:134px;image-rendering:pixelated;transition:all 0.3s ease}
+
+/* Leaderboard Expandable */
+#rankWrap{transition:all 0.3s ease;max-height:300px;overflow-y:auto}
+.ranklist{display:flex;flex-direction:column;gap:8px}.rank{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:8px 10px;background:#071a2d;border:1px solid #1d4262;border-radius:10px}.medal{font-size:18px}.rankName{font-weight:800;font-size:14px}.rankMeta{font-size:11px;color:#91b1d0;margin-top:2px}.progress{height:6px;background:#23415d;border-radius:9px;margin-top:6px;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,#23d8ff,#32ef91);width:0%;transition:width .4s}
+
+.question{background:#07192b;border:1px solid #265177;padding:15px;border-radius:13px;margin-top:12px}.question p{font-weight:800;font-size:16px;line-height:1.4}.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}.answer{background:#183a5b;color:white;text-align:left;border:1px solid #386287;padding:12px;border-radius:10px;font-weight:bold}.answer.correct{background:#087d50}.answer.wrong{background:#9e2941}.answer:disabled{cursor:default;opacity:.85}
+#feedback{min-height:24px;font-weight:800;margin-top:10px}
+.timer-bar{height:6px;background:#ff3f48;width:100%;border-radius:4px;margin-top:8px;transition:width 1s linear}
+
+/* Modals */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(4,12,24,0.92);backdrop-filter:blur(6px);z-index:9999;place-items:center;padding:16px;overflow-y:auto}
+.mobile-card{background:#0d223a;border:2px solid #35d7ff;border-radius:24px;width:100%;max-width:420px;padding:24px;color:white;box-shadow:0 15px 50px rgba(0,0,0,0.8);text-align:center}
+.mobile-answers{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.m-ans-btn{display:flex;align-items:center;gap:12px;padding:14px;font-size:15px;font-weight:bold;border-radius:14px;color:white;box-shadow:0 4px 12px rgba(0,0,0,0.3);text-align:left;border:2px solid rgba(255,255,255,0.15);cursor:pointer;transition:transform 0.1s}
+.m-ans-btn:active{transform:scale(0.98)}
+.m-ans-badge{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;font-size:18px;font-weight:900;background:rgba(255,255,255,0.2);flex-shrink:0}
+.m-a{background:linear-gradient(135deg,#e63946,#b71c1c)}.m-b{background:linear-gradient(135deg,#1d3557,#457b9d)}.m-c{background:linear-gradient(135deg,#2a9d8f,#1b4332)}.m-d{background:linear-gradient(135deg,#e76f51,#d35400)}
+
+.page-modal-card{background:linear-gradient(145deg,#0e243d,#071426);border:2px solid #35d7ff;border-radius:24px;width:100%;max-width:650px;padding:32px;color:white;box-shadow:0 20px 60px rgba(0,0,0,0.9);text-align:center;position:relative}
+.close-page-btn{position:absolute;top:18px;right:20px;background:#203d5c;color:white;font-size:16px;padding:8px 16px;border-radius:10px}
+
+footer{text-align:center;padding:16px;color:#6f98bd;font-size:12px}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:12px}header{padding:12px 4%}.statrow{grid-template-columns:1fr 1fr 1fr}#raceCanvas{height:320px}}
+@media(max-width:500px){.answers{grid-template-columns:1fr}}
+</style>
+<!-- Thêm thư viện QRCode.js chuẩn để điện thoại quét được link thực sự -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<header>
+  <div><div class="logo">🏁 ĐƯỜNG ĐUA TOP 1</div><div class="tag">CON QUAY & HIỆU ỨNG CON QUAY · 30S MỖI CÂU</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="blue" id="openMobileView">📱 GIẢ LẬP ĐIỆN THOẠI</button>
+    <button class="gold" id="newRoom">＋ TẠO PHÒNG</button>
+  </div>
+</header>
+<main>
+<section>
+  <div class="panel">
+    <h2>🏎️ Đường đua 3D Sống Động</h2>
+    <div id="trackWrap">
+      <div class="trackBadge" id="roomLabel">PHÒNG: RACE2026</div><div class="lapBadge" id="lapLabel">SẴN SÀNG XUẤT PHÁT</div>
+      <div class="timerBadge" id="timerBadge">⏱️ 30s</div>
+      <canvas id="raceCanvas"></canvas>
+    </div>
+    <div class="controls">
+      <button class="primary" id="startBtn">▶ BẮT ĐẦU CUỘC ĐUA</button>
+      <button class="blue" id="nextBtn">CÂU TIẾP THEO →</button>
+      <button class="muted" id="pauseBtn">Ⅱ TẠM DỪNG</button>
+      <button class="gold" id="resetBtn">↻ CHƠI LẠI</button>
+      <button class="sound-btn" id="soundToggleBtn">🔊 ÂM THANH: BẬT</button>
+    </div>
+    <div class="statrow">
+      <div class="stat">Người chơi<b id="playerCount">5</b></div>
+      <div class="stat">Câu hỏi<b id="questionCount" style="color:var(--cyan)">0 / 10</b></div>
+      <div class="stat">Thời gian còn lại<b id="timeText" style="color:var(--gold)">30s</b></div>
+      <div class="stat">Trạng thái<b id="statusText">Chờ bắt đầu</b></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:18px">
+    <h2>❓ Câu hỏi thử thách (30s)</h2>
+    <div class="timer-bar" id="timerBar"></div>
+    <div class="question">
+      <div class="small" id="qNum">CHƯA BẮT ĐẦU</div>
+      <p id="questionText">Nhấn “Bắt đầu cuộc đua” để khởi động động cơ!</p>
+      <div class="answers" id="answers"></div>
+      <div id="feedback"></div>
+    </div>
+  </div>
+</section>
+<aside>
+  <!-- QR Panel với nút Thu phóng / Mở trang chuyên biệt -->
+  <div class="panel clickable-panel" id="qrPanelBox" title="Nhấn để mở trang Mã QR toàn màn hình">
+    <div class="panel-header">
+      <h2>📱 Tham gia bằng QR</h2>
+      <button class="btn-icon" id="openQrPageBtn">🔍 MỞ TRANG QR</button>
+    </div>
+    <div class="small">Quét mã QR bằng điện thoại để mở giao diện trả lời.</div>
+    <div id="qrWrap">
+      <div id="qrBox" style="padding:10px"><div id="qrCanvas"></div></div>
+    </div>
+    <div class="small" style="text-align:center">Mã phòng</div>
+    <h2 id="roomCode" style="text-align:center;color:var(--gold);letter-spacing:2px">RACE2026</h2>
+    <button class="blue" id="copyLink" style="width:100%" onclick="event.stopPropagation()">🔗 SAO CHÉP ĐỊA CHỈ THAM GIA</button>
+    <div onclick="event.stopPropagation()">
+      <label for="nickname">Biệt danh của bạn</label><input id="nickname" maxlength="18" placeholder="Ví dụ: Minh Anh">
+      <label>Chọn màu xe</label>
+      <div class="carChoices" id="carChoices">
+        <button class="car selected" data-color="#ff3f48" style="background:#ff3f48" aria-label="Xe đỏ"></button>
+        <button class="car" data-color="#29a9ff" style="background:#29a9ff" aria-label="Xe xanh"></button>
+        <button class="car" data-color="#ffd447" style="background:#ffd447" aria-label="Xe vàng"></button>
+        <button class="car" data-color="#31df82" style="background:#31df82" aria-label="Xe xanh lá"></button>
+        <button class="car" data-color="#b875ff" style="background:#b875ff" aria-label="Xe tím"></button>
+        <button class="car" data-color="#ff8d35" style="background:#ff8d35" aria-label="Xe cam"></button>
+      </div>
+      <button class="primary" id="joinBtn" style="width:100%">🚦 THÊM TAY ĐUA</button>
+      <p class="small" id="joinFeedback"></p>
+    </div>
+  </div>
+
+  <!-- Bảng xếp hạng với nút Mở trang chuyên biệt -->
+  <div class="panel clickable-panel" style="margin-top:18px" id="rankPanelBox" title="Nhấn để mở Bảng xếp hạng toàn màn hình">
+    <div class="panel-header">
+      <h2>🏆 Bảng xếp hạng</h2>
+      <button class="btn-icon" id="openRankPageBtn">🔍 MỞ BẢNG XẾP HẠNG</button>
+    </div>
+    <div id="rankWrap">
+      <div class="ranklist" id="rankList"></div>
+    </div>
+  </div>
+</aside>
+</main>
+
+<!-- Modal Giả Lập Màn Hình Điện Thoại Trả Lời (Có Đầy Đủ Nội Dung Đáp Án) -->
+<div id="mobileModal" class="modal-overlay">
+  <div class="mobile-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b style="color:var(--gold);font-size:16px">📱 ĐIỆN THOẠI TRẢ LỜI</b>
+      <button class="muted" id="closeMobileView" style="padding:4px 12px">✕ Đóng</button>
+    </div>
+    <div class="small" style="margin:6px 0" id="mStatus">Đã kết nối phòng: <b id="mRoomCode" style="color:var(--gold)">RACE2026</b></div>
+    <div style="font-weight:800;font-size:16px;margin:12px 0;color:var(--cyan);min-height:48px" id="mQuestionText">Chờ bắt đầu câu hỏi...</div>
+    <div class="mobile-answers" id="mAnswersList">
+      <button class="m-ans-btn m-a" onclick="submitMobileAnswer(0)"><span class="m-ans-badge">A</span><span id="mAns0">Đáp án A</span></button>
+      <button class="m-ans-btn m-b" onclick="submitMobileAnswer(1)"><span class="m-ans-badge">B</span><span id="mAns1">Đáp án B</span></button>
+      <button class="m-ans-btn m-c" onclick="submitMobileAnswer(2)"><span class="m-ans-badge">C</span><span id="mAns2">Đáp án C</span></button>
+      <button class="m-ans-btn m-d" onclick="submitMobileAnswer(3)"><span class="m-ans-badge">D</span><span id="mAns3">Đáp án D</span></button>
+    </div>
+    <div id="mFeedback" style="margin-top:14px;font-weight:bold;min-height:24px;font-size:15px"></div>
+  </div>
+</div>
+
+<!-- Modal Trang Chuyên Biệt Mã QR -->
+<div id="qrPageModal" class="modal-overlay">
+  <div class="page-modal-card">
+    <button class="close-page-btn" id="closeQrPageBtn">✕ ĐÓNG</button>
+    <h1 style="color:var(--gold);margin-top:0">📱 QUÉT MÃ QR ĐỂ THAM GIA</h1>
+    <p class="small" style="font-size:16px">Sử dụng camera điện thoại để quét mã QR bên dưới</p>
+    <div style="background:white;padding:20px;border-radius:20px;display:inline-block;margin:20px 0;box-shadow:0 10px 30px rgba(0,0,0,0.5)">
+      <div id="bigQrCanvas"></div>
+    </div>
+    <div style="font-size:22px;margin-bottom:10px">MÃ PHÒNG ĐUA: <b id="bigRoomCode" style="color:var(--gold);font-size:32px;letter-spacing:4px">RACE2026</b></div>
+    <button class="blue" id="copyBigLink" style="font-size:16px;padding:12px 24px">🔗 SAO CHÉP ĐƯỜNG LINK THAM GIA</button>
+  </div>
+</div>
+
+<!-- Modal Trang Chuyên Biệt Bảng Xếp Hạng -->
+<div id="rankPageModal" class="modal-overlay">
+  <div class="page-modal-card" style="max-width:800px">
+    <button class="close-page-btn" id="closeRankPageBtn">✕ ĐÓNG</button>
+    <h1 style="color:var(--gold);margin-top:0">🏆 BẢNG XẾP HẠNG TRỰC TIẾP</h1>
+    <div class="ranklist" id="bigRankList" style="margin-top:20px;max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<footer>ĐƯỜNG ĐUA TOP 1 · BẢN ĐẠI CƯƠNG CƠ - NHIỆT · HỆ THỐNG ĐẾM NGƯỢC 30S VÀ ĐỒNG BỘ ĐIỆN THOẠI</footer>
+
+<script>
+// --- BỘ CÂU HỎI VẬT LÝ ---
+const questions = [
+  { q: "Câu 1: Con quay là gì theo định nghĩa vật lý?", a: ["Một vật thể bất kỳ đang thực hiện chuyển động tịnh tiến.","Một vật rắn đối xứng quay quanh một trục đối xứng với vận tốc góc rất lớn.","Một vật rắn không đối xứng quay quanh một điểm cố định với tốc độ chậm.","Một vật thể chỉ chuyển động dưới tác dụng của lực từ trường."], correct: 1 },
+  { q: "Câu 2: Đại lượng nào đặc trưng cho mức quán tính của vật rắn đối với chuyển động quay quanh một trục?", a: ["Mômen lực (τ)","Vận tốc góc (ω)","Mômen quán tính (I)","Mômen động lượng (L)"], correct: 2 },
+  { q: "Câu 3: Công thức tính mômen động lượng L của một vật rắn quay là gì?", a: ["L = I · ω","L = m · v","L = r × F","L = dτ / dt"], correct: 0 },
+  { q: "Câu 4: Khi tổng mômen ngoại lực tác dụng lên hệ đối với một điểm/trục bằng 0 (τ_ngoại = 0), phát biểu nào đúng?", a: ["Trục quay bị nghiêng lập tức.","Vận tốc góc ω bằng 0.","Mômen động lượng L của hệ biến thiên theo thời gian.","Mômen động lượng L của hệ được bảo toàn cả về hướng lẫn độ lớn (L = const)."], correct: 3 },
+  { q: "Câu 5: Phương trình cơ bản mô tả động lực học chuyển động quay là gì?", a: ["F = m · a","τ = dL / dt","Ω = M · L","I = ∫ r² dm"], correct: 1 },
+  { q: "Câu 6: Vận tốc góc tiến động Ω (chuyển động đảo trục) được tính bằng công thức nào?", a: ["Ω = M / L = M / (I · ω)","Ω = M · I · ω","Ω = (I · ω) / M","Ω = L / M"], correct: 0 },
+  { q: "Câu 7: Nguyên nhân làm cho con quay quay nhanh mà không bị rơi đổ do trọng lực là gì?", a: ["Trọng lực bị biến mất khi vật quay nhanh.","Mômen trọng lực M vuông góc với L, làm cho vectơ L chỉ đổi hướng mà không đổi độ lớn.","Lực ma sát triệt tiêu hoàn toàn tác dụng của trọng lực.","Mômen quán tính I giảm về 0 khi con quay đạt tốc độ cực đại."], correct: 1 },
+  { q: "Câu 8: Chuyển động chương động (chuyển động lắc) của con quay có đặc điểm gì?", a: ["Trục con quay hoàn toàn đứng yên không dao động.","Là chuyển động làm con quay lập tức ngã đổ.","Là dao động nhỏ lên xuống của trục con quay; biên độ nhỏ, tần số cao và nhanh tắt dần.","Xảy ra khi không có ma sát."], correct: 2 },
+  { q: "Câu 9: Thiết bị nào ứng dụng hiệu ứng con quay trong điện thoại thông minh để xoay màn hình tự động?", a: ["Bánh xe tích năng","Cảm biến con quay MEMS","La bàn cơ học","Bánh đà khổng lồ"], correct: 1 },
+  { q: "Câu 10: Ứng dụng nào sau đây KHÔNG thuộc nhóm ứng dụng của hiệu ứng con quay?", a: ["Hệ thống dẫn đường quán tính trên máy bay, tàu ngầm","Hệ thống ổn định nòng pháo xe tăng khi di chuyển","La bàn từ tính phụ thuộc vào từ trường Trái Đất","Xe hai bánh tự cân bằng"], correct: 2 }
+];
+
+// --- HỆ THỐNG ÂM THANH SINH ĐỘNG ---
+class SoundSystem {
+  constructor() { this.ctx = null; this.enabled = true; this.engineOsc = null; this.engineGain = null; this.bgmTimer = null; }
+  init() { if (!this.ctx) { const AudioCtx = window.AudioContext || window.webkitAudioContext; this.ctx = new AudioCtx(); } if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  toggleSound() { this.enabled = !this.enabled; if (!this.enabled) { this.stopEngine(); this.stopBGM(); } return this.enabled; }
+  playBeep(freq = 440, duration = 0.1, type = 'sine', vol = 0.2) {
+    if (!this.enabled) return; this.init();
+    try {
+      const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(); osc.stop(this.ctx.currentTime + duration);
+    } catch(e){}
+  }
+  playStart() {
+    if (!this.enabled) return; this.init();
+    [261.63, 329.63, 392.00, 523.25].forEach((f, i) => setTimeout(() => this.playBeep(f, 0.15, 'triangle', 0.25), i * 120));
+  }
+  playCorrect() {
+    if (!this.enabled) return; this.init();
+    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => this.playBeep(f, 0.15, 'sine', 0.2), i * 80));
+  }
+  playWrong() {
+    if (!this.enabled) return; this.init();
+    this.playBeep(140, 0.35, 'sawtooth', 0.3);
+  }
+  playTick() { this.playBeep(880, 0.04, 'sine', 0.08); }
+  startEngine() {
+    if (!this.enabled || this.engineOsc) return; this.init();
+    try {
+      this.engineOsc = this.ctx.createOscillator(); this.engineGain = this.ctx.createGain();
+      this.engineOsc.type = 'sawtooth'; this.engineOsc.frequency.setValueAtTime(65, this.ctx.currentTime);
+      this.engineGain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+      this.engineOsc.connect(this.engineGain); this.engineGain.connect(this.ctx.destination);
+      this.engineOsc.start();
+    } catch(e){}
+  }
+  stopEngine() { if (this.engineOsc) { try { this.engineOsc.stop(); } catch(e){} this.engineOsc = null; } }
+  startBGM() {
+    if (!this.enabled || this.bgmTimer) return; this.init();
+    const seq = [130, 130, 261, 130, 146, 146, 293, 146]; let step = 0;
+    this.bgmTimer = setInterval(() => { if (!this.enabled) return; this.playBeep(seq[step % seq.length], 0.08, 'sawtooth', 0.04); step++; }, 200);
+  }
+  stopBGM() { if (this.bgmTimer) { clearInterval(this.bgmTimer); this.bgmTimer = null; } }
+  playVictory() { if (!this.enabled) return; this.stopBGM(); this.stopEngine(); [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => this.playBeep(f, 0.3, 'triangle', 0.3), i * 200)); }
+}
+const sounds = new SoundSystem();
+
+// --- GAME STATE ---
+const carColors=["#ff3f48","#29a9ff","#ffd447","#31df82","#b875ff","#ff8d35"];
+let players=[
+ {name:"Minh Anh",color:carColors[0],progress:0,correct:0,streak:0},
+ {name:"Gia Bảo",color:carColors[1],progress:0,correct:0,streak:0},
+ {name:"Thu Hà",color:carColors[2],progress:0,correct:0,streak:0},
+ {name:"Quang Huy",color:carColors[3],progress:0,correct:0,streak:0},
+ {name:"Lan Nhi",color:carColors[4],progress:0,correct:0,streak:0}
+];
+let current=0,started=false,paused=false,selectedColor=carColors[0],answered=false,finished=false,room="RACE2026";
+let timerVal=30, timerInterval=null;
+
+// Tự động nhận diện mã phòng từ URL (ví dụ: ?room=RACE2026) nếu người chơi mở từ điện thoại
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('room')) {
+  room = urlParams.get('room').toUpperCase();
+}
+
+const $=id=>document.getElementById(id);
+function randomRoom(){return "RACE"+Math.random().toString(36).slice(2,6).toUpperCase()}
+
+// --- BẢNG XẾP HẠNG & HIỂN THỊ TOÀN MÀN HÌNH ---
+function renderRanks(){
+ const sorted=[...players].sort((a,b)=>b.progress-a.progress||b.correct-a.correct);
+ const html = sorted.map((p,i)=>`<div class="rank" style="padding:12px"><div class="medal" style="font-size:24px">${["🥇","🥈","🥉"][i]||"🏎️"}</div><div><div class="rankName" style="font-size:16px">${escapeHtml(p.name)}</div><div class="rankMeta" style="font-size:13px">${p.correct} câu đúng · ${p.streak} chuỗi</div><div class="progress" style="height:8px"><span style="width:${Math.min(100,p.progress)}%;background:${p.color}"></span></div></div><b style="font-size:18px">${Math.round(p.progress)}%</b></div>`).join("");
+ $("rankList").innerHTML = html;
+ $("bigRankList").innerHTML = html;
+ $("playerCount").textContent = players.length;
+}
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+// MỞ TRANG CHUYÊN BIỆT QR
+function openQrPage() {
+  drawQR("bigQrCanvas", 260);
+  $("bigRoomCode").textContent = room;
+  $("qrPageModal").style.display = "grid";
+}
+$("openQrPageBtn").onclick = (e) => { e.stopPropagation(); openQrPage(); };
+$("qrPanelBox").onclick = openQrPage;
+$("closeQrPageBtn").onclick = () => { $("qrPageModal").style.display = "none"; };
+
+// MỞ TRANG CHUYÊN BIỆT BẢNG XẾP HẠNG
+function openRankPage() {
+  renderRanks();
+  $("rankPageModal").style.display = "grid";
+}
+$("openRankPageBtn").onclick = (e) => { e.stopPropagation(); openRankPage(); };
+$("rankPanelBox").onclick = openRankPage;
+$("closeRankPageBtn").onclick = () => { $("rankPageModal").style.display = "none"; };
+
+// --- ĐỒNG HỒ ĐẾM NGƯỢC 30s & CHUYỂN CÂU HỎI ---
+function startTimer() {
+  clearInterval(timerInterval);
+  timerVal = 30;
+  updateTimerUI();
+  
+  timerInterval = setInterval(() => {
+    if (paused || !started || finished) return;
+    timerVal--;
+    updateTimerUI();
+    if (timerVal <= 5 && timerVal > 0) sounds.playTick();
+
+    if (timerVal <= 0) {
+      clearInterval(timerInterval);
+      handleTimeOut();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  $("timeText").textContent = `${timerVal}s`;
+  $("timerBadge").textContent = `⏱️ ${timerVal}s`;
+  $("timerBadge").style.display = "block";
+  $("timerBar").style.width = `${(timerVal / 30) * 100}%`;
+}
+
+function handleTimeOut() {
+  if (answered) return;
+  answered = true;
+  sounds.playWrong();
+  $("feedback").style.color = "var(--red)";
+  $("feedback").textContent = "⏰ HẾT GIỜ 30S! Tự động chuyển câu tiếp theo...";
+  document.querySelectorAll(".answer").forEach(b => b.disabled = true);
+  
+  setTimeout(() => {
+    if (started && !finished) {
+      current++;
+      if (current >= questions.length) finishRace();
+      else showQuestion();
+    }
+  }, 2000);
+}
+
+// --- HIỂN THỊ CÂU HỎI ---
+function showQuestion(){
+ if(current>=questions.length){finishRace();return}
+ answered=false;let q=questions[current];
+ const qNumEl = $("qNum");
+ if(qNumEl) qNumEl.textContent=`CÂU ${current+1} / ${questions.length}`;
+ const qCountEl = $("questionCount");
+ if(qCountEl) qCountEl.textContent=`${current} / ${questions.length}`;
+ const qTextEl = $("questionText");
+ if(qTextEl) qTextEl.textContent=q.q;
+ const feedbackEl = $("feedback");
+ if(feedbackEl) feedbackEl.textContent="";
+ 
+ // Cập nhật màn hình Điện thoại giao diện chi tiết
+ const mQ = $("mQuestionText");
+ if(mQ) mQ.textContent=q.q; 
+ const mF = $("mFeedback");
+ if(mF) mF.textContent="";
+ for(let idx=0; idx<4; idx++) {
+   const mAnsBtn = $("mAns"+idx);
+   if(mAnsBtn) mAnsBtn.textContent = q.a[idx];
+ }
+
+ const answersEl = $("answers");
+ if(answersEl) {
+   answersEl.innerHTML=q.a.map((a,i)=>`<button class="answer" data-i="${i}">${"ABCD"[i]}. ${a}</button>`).join("");
+ }
+ document.querySelectorAll(".answer").forEach(btn=>btn.addEventListener("click",()=>answer(Number(btn.dataset.i))));
+ 
+ startTimer();
+}
+
+function answer(i){
+ if(!started||paused||answered||finished)return;
+ answered=true; clearInterval(timerInterval);
+ const q=questions[current],correct=i===q.correct;
+ document.querySelectorAll(".answer").forEach((b,j)=>{b.disabled=true;if(j===q.correct)b.classList.add("correct");else if(j===i)b.classList.add("wrong")});
+ 
+ const nicknameEl = $("nickname");
+ const name = nicknameEl ? nicknameEl.value.trim() : "";
+ let driver=players.find(p=>name&&p.name.toLowerCase()===name.toLowerCase())||players[0];
+ 
+ const mF = $("mFeedback");
+ if(correct){
+   sounds.playCorrect();
+   driver.correct++;driver.streak++;driver.progress=Math.min(100,driver.progress+10+(driver.streak>=3?4:0));
+   if(mF) { mF.textContent = "✓ ĐÚNG RỒI! +10%"; mF.style.color = "#32df85"; }
+ } else {
+   sounds.playWrong();
+   driver.streak=0;
+   if(mF) { mF.textContent = "✕ SAI RỒI!"; mF.style.color = "#ff5268"; }
+ }
+ 
+ players.filter(p=>p!==driver).forEach((p)=>{
+   if(Math.random()>.38){p.correct++;p.streak++;p.progress=Math.min(100,p.progress+Math.random()*8+6)}
+   else p.streak=0;
+ });
+
+ const feedbackEl = $("feedback");
+ if(feedbackEl) {
+   feedbackEl.style.color=correct?"var(--green)":"var(--red)";
+   feedbackEl.textContent=correct?"✓ CHÍNH XÁC! Xe tăng tốc!":`✕ CHƯA CHÍNH XÁC! Đáp án đúng: ${"ABCD"[q.correct]}`;
+ }
+ const lapLabelEl = $("lapLabel");
+ if(lapLabelEl) lapLabelEl.textContent=correct?"🔥 TĂNG TỐC!":"⚠️ BỊ CHẬM NHỊP!";
+ const qCountEl = $("questionCount");
+ if(qCountEl) qCountEl.textContent=`${current+1} / ${questions.length}`;
+ renderRanks();drawTrack();
+
+ if(players.some(p=>p.progress>=100)) finishRace();
+ else {
+   // Tự chuyển sang câu tiếp theo sau 3 giây
+   setTimeout(() => {
+     if(started && !finished) {
+       current++;
+       if(current>=questions.length) finishRace();
+       else showQuestion();
+     }
+   }, 3000);
+ }
+}
+
+function finishRace(){
+ finished=true;started=false;clearInterval(timerInterval);
+ sounds.playVictory();
+ const statusEl = $("statusText");
+ if(statusEl) statusEl.textContent="Đã kết thúc";
+ const lapEl = $("lapLabel");
+ if(lapEl) lapEl.textContent="🏆 KẾT THÚC!";
+ const winner=[...players].sort((a,b)=>b.progress-a.progress||b.correct-a.correct)[0];
+ const qTextEl = $("questionText");
+ if(qTextEl) qTextEl.textContent=`🏆 QUÁN QUÂN: ${winner.name}!`; 
+ const answersEl = $("answers");
+ if(answersEl) answersEl.innerHTML="";
+ const feedbackEl = $("feedback");
+ if(feedbackEl) feedbackEl.textContent="Cuộc đua hoàn thành!";
+ renderRanks();
+}
+
+// GIẢ LẬP ĐIỆN THOẠI TRẢ LỜI
+$("openMobileView").onclick = () => { $("mobileModal").style.display = "grid"; };
+$("closeMobileView").onclick = () => { $("mobileModal").style.display = "none"; };
+function submitMobileAnswer(idx) {
+  if (!answered && started) {
+    answer(idx);
+  }
+}
+
+// BẮT ĐẦU / ĐIỀU KHIỂN
+$("startBtn").onclick=()=>{
+  sounds.init();
+  if(finished)resetGame();
+  started=true;paused=false;
+  sounds.playStart(); sounds.startBGM(); sounds.startEngine();
+  $("statusText").textContent="Đang đua"; $("lapLabel").textContent="🏁 XUẤT PHÁT!";
+  showQuestion(); drawTrack();
+};
+
+$("nextBtn").onclick=()=>{
+  if(!started||paused)return;
+  current++;
+  if(current>=questions.length) finishRace();
+  else showQuestion();
+};
+
+$("pauseBtn").onclick=()=>{
+  if(!started)return;
+  paused=!paused;
+  if(paused){ sounds.stopBGM(); sounds.stopEngine(); clearInterval(timerInterval); }
+  else { sounds.startBGM(); sounds.startEngine(); startTimer(); }
+  $("pauseBtn").textContent=paused?"▶ TIẾP TỤC":"Ⅱ TẠM DỪNG";
+  $("statusText").textContent=paused?"Tạm dừng":"Đang đua";
+};
+
+function resetGame(){
+  clearInterval(timerInterval); sounds.stopBGM(); sounds.stopEngine();
+  players.forEach(p=>{p.progress=0;p.correct=0;p.streak=0});
+  current=0;started=false;paused=false;answered=false;finished=false;
+  if($("statusText")) $("statusText").textContent="Chờ bắt đầu"; 
+  if($("lapLabel")) $("lapLabel").textContent="SẴN SÀNG";
+  if($("questionCount")) $("questionCount").textContent=`0 / ${questions.length}`;
+  if($("questionText")) $("questionText").textContent="Nhấn “Bắt đầu cuộc đua” để xuất phát!";
+  if($("qNum")) $("qNum").textContent="CHƯA BẮT ĐẦU"; 
+  if($("answers")) $("answers").innerHTML=""; 
+  if($("feedback")) $("feedback").textContent="";
+  if($("timerBadge")) $("timerBadge").style.display = "none";
+  renderRanks(); drawTrack();
+}
+
+$("resetBtn").onclick=resetGame;
+$("soundToggleBtn").onclick=()=>{ $("soundToggleBtn").textContent = sounds.toggleSound() ? "🔊 ÂM THANH: BẬT" : "🔇 ÂM THANH: TẮT"; };
+
+$("newRoom").onclick=()=>{
+  room=randomRoom(); $("roomCode").textContent=room; $("roomLabel").textContent="PHÒNG: "+room; $("mRoomCode").textContent=room; drawQR();
+};
+
+document.querySelectorAll(".car").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".car").forEach(x=>x.classList.remove("selected"));
+  b.classList.add("selected"); selectedColor=b.dataset.color;
+});
+
+$("joinBtn").onclick=()=>{
+  const name=$("nickname").value.trim();
+  if(!name) return;
+  if(players.some(p=>p.name.toLowerCase()===name.toLowerCase())) return;
+  players.push({name,color:selectedColor,progress:0,correct:0,streak:0});
+  $("joinFeedback").textContent=`Đã thêm tay đua ${name}!`;
+  renderRanks(); drawTrack();
+};
+
+const copyAction = async()=>{
+  const targetUrl = getGameUrl();
+  try{ await navigator.clipboard.writeText(targetUrl); alert("Đã sao chép đường link phòng đua!"); }
+  catch(e){ prompt("Địa chỉ game:", targetUrl); }
+};
+$("copyLink").onclick = copyAction;
+$("copyBigLink").onclick = copyAction;
+
+// LẤY ĐƯỜNG LINK THAM GIA DÀNH CHO MÃ QR VÀ SAO CHÉP
+function getGameUrl() {
+  // Lấy toàn bộ URL hiện tại của trang web (không chứa query params cũ)
+  const currentUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+  return `${currentUrl}?room=${room}`;
+}
+
+// VẼ MÃ QR CHUẨN ĐỂ ĐIỆN THOẠI QUÉT ĐƯỢC LINK TRỰC TIẾP
+function drawQR(){
+ const targetUrl = getGameUrl();
+ 
+ // Vẽ QR nhỏ ở bảng điều khiển
+ const qrBox = $("qrCanvas");
+ if(qrBox) {
+   qrBox.innerHTML = "";
+   new QRCode(qrBox, {
+     text: targetUrl,
+     width: 130,
+     height: 130,
+     colorDark : "#071426",
+     colorLight : "#ffffff",
+     correctLevel : QRCode.CorrectLevel.H
+   });
+ }
+
+ // Vẽ QR lớn ở trang phóng to
+ const bigQrBox = $("bigQrCanvas");
+ if(bigQrBox) {
+   bigQrBox.innerHTML = "";
+   new QRCode(bigQrBox, {
+     text: targetUrl,
+     width: 250,
+     height: 250,
+     colorDark : "#071426",
+     colorLight : "#ffffff",
+     correctLevel : QRCode.CorrectLevel.H
+   });
+ }
+}
+
+// MỞ TRANG CHUYÊN BIỆT QR
+function openQrPage() {
+  drawQR();
+  $("bigRoomCode").textContent = room;
+  $("qrPageModal").style.display = "grid";
+}
+
+// VẼ ĐƯỜNG ĐUA 3D
+function drawTrack(){
+ const c=$("raceCanvas"),rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ c.width=Math.max(1,rect.width*dpr);c.height=Math.max(1,rect.height*dpr);
+ const ctx=c.getContext("2d");ctx.scale(dpr,dpr);const w=rect.width,h=rect.height;
+ const sky=ctx.createLinearGradient(0,0,0,h);
+ sky.addColorStop(0,"#0d223a");sky.addColorStop(.5,"#1c4e75");sky.addColorStop(1,"#133829");
+ ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ for(let i=0;i<14;i++){
+   let x=i*w/13; ctx.fillStyle=i%2?"#1b5947":"#144537";
+   ctx.beginPath();ctx.moveTo(x-40,h*.47);ctx.lineTo(x+20,h*.2+(i%3)*15);ctx.lineTo(x+90,h*.47);ctx.fill();
+ }
+ ctx.fillStyle="#a3b8cc";ctx.beginPath();ctx.moveTo(w*.38,h*.26);ctx.lineTo(w*.62,h*.26);ctx.lineTo(w*.96,h);ctx.lineTo(w*.04,h);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#1f2937";ctx.beginPath();ctx.moveTo(w*.395,h*.28);ctx.lineTo(w*.605,h*.28);ctx.lineTo(w*.91,h);ctx.lineTo(w*.09,h);ctx.closePath();ctx.fill();
+ ctx.strokeStyle="#ffe875";ctx.lineWidth=3;ctx.setLineDash([12,12]);ctx.beginPath();ctx.moveTo(w*.5,h*.3);ctx.lineTo(w*.5,h);ctx.stroke();ctx.setLineDash([]);
+ for(let i=0;i<12;i++)for(let j=0;j<2;j++){ ctx.fillStyle=(i+j)%2?"#fff":"#111"; ctx.fillRect(w*.4+i*w*.2/12,h*.31+j*5,w*.2/12,5); }
+ const sorted=[...players].sort((a,b)=>b.progress-a.progress);
+ sorted.forEach((p,i)=>{
+  const lane=(i-(sorted.length-1)/2)*Math.min(24,w*.045);
+  const y=h*.86-p.progress*h*.48;const x=w*.5+lane+(p.progress/100-0.5)*w*.08;
+  const scale=.65+(y/h)*.6;drawCar(ctx,x,y,p.color,scale,p.name);
+ });
+ ctx.fillStyle="#071426cc";ctx.fillRect(12,h-38,240,25);ctx.fillStyle="#fff";ctx.font="bold 12px Arial";
+ ctx.fillText("🏁 ĐƯỜNG ĐUA TOP 1 - CON QUAY",22,h-21);
+}
+
+function drawCar(ctx,x,y,color,s,name){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ ctx.fillStyle="#0006";ctx.beginPath();ctx.ellipse(0,13,22,9,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#111";ctx.fillRect(-20,-3,7,14);ctx.fillRect(13,-3,7,14);
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.moveTo(-23,5);ctx.lineTo(-17,-10);ctx.lineTo(-9,-15);ctx.lineTo(9,-15);ctx.lineTo(18,-8);ctx.lineTo(23,5);ctx.lineTo(15,12);ctx.lineTo(-15,12);
+ ctx.closePath();ctx.fill();
+ ctx.fillStyle="#a9edff";ctx.beginPath();ctx.moveTo(-10,-9);ctx.lineTo(-6,-13);ctx.lineTo(7,-13);ctx.lineTo(12,-8);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#fff";ctx.fillRect(-17,3,7,3);ctx.fillRect(10,3,7,3);
+ ctx.fillStyle="#fff";ctx.font="bold 10px Arial";ctx.textAlign="center";ctx.fillText(name.slice(0,12),0,-22);
+ ctx.restore();
+}
+
+window.addEventListener("resize",drawTrack);
+
+// Tự động bật giao diện điện thoại nếu phát hiện truy cập từ QR (có tham số ?room=...)
+window.addEventListener("load", () => {
+  drawQR();
+  renderRanks();
+  drawTrack();
+  if (urlParams.has('room')) {
+    $("mobileModal").style.display = "grid";
+    $("mRoomCode").textContent = room;
+  }
+});
+</script>
+</body>
+</html>
